@@ -1,29 +1,43 @@
-Langchain HNWSLib based chatbot which retrieves the transcript of a given youtube
-url and answers questions only based on the relevant video.
+# youtube-transcript-summarizer
 
-Click the pic to see it in action:
-[![Sample of the working app:](https://github.com/sameeranamarnath/youtubeVideoSummaryBot/assets/85400557/646d7092-85d6-47b9-b2f9-e51348b96e91)](https://clipchamp.com/watch/w4mao2IgjnT)
+Ask questions about a YouTube video and get answers grounded only in that video's
+transcript. Paste a URL, the app pulls the captions, indexes them with HNSWLib,
+and answers from the nearest chunks instead of from the model's general knowledge.
 
-Current limitation:
-if the youtube video has a short transcript, the bot works fine, this has to do with the
-openai api limitations. There are definitely better ways to do the same without dependence on
-openai api.
+## How it works
 
-Uses nextjs, langchain, tailwind css, openai api
+1. Parse the video id out of the pasted URL and fetch the transcript.
+2. Split the transcript, embed it, and persist the vectors with HNSWLib
+   (`hnswlib.index` + `docstore.json`).
+3. On a question, retrieve the closest chunks and send them plus the question to
+   the OpenAI chat model.
+4. Stream the answer back in the UI.
 
-How to use it:
+## Stack
 
-create .env file with the following value:
-OPENAI_API_KEY="your-openai-api-key"
+- Next.js + React, Tailwind CSS
+- LangChain (JS) for the retrieval chain
+- HNSWLib as the vector store
+- OpenAI API for embeddings and chat
 
-Navigate to folder
-
-Install dependencies from package.json
+## Run it
 
 ```
 npm install
+npm run dev
 ```
 
-Then, run the development server:
-npm run dev
-runs on localhost:3000
+App on `http://localhost:3000`. Create `.env` with:
+
+```
+OPENAI_API_KEY=your-key
+```
+
+## Known limits
+
+- Short transcripts work well; long ones run into OpenAI request limits.
+- No captions on the source video means nothing to retrieve.
+
+## Demo
+
+Screen recording: https://clipchamp.com/watch/w4mao2IgjnT
