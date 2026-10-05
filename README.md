@@ -41,3 +41,27 @@ OPENAI_API_KEY=your-key
 ## Demo
 
 Screen recording: https://clipchamp.com/watch/w4mao2IgjnT
+
+## Agent service (`ai/`)
+
+The Next.js app keeps the original in-process HNSWLib index. `ai/` is the
+service-based version: transcripts are ingested into Qdrant, and questions run
+through a LangGraph pipeline that grades its own retrieval before answering.
+
+```
+START -> retrieve -> grade_context -+-> answer  -> END
+                                    |
+                                    +-> decline -> END
+```
+
+- **Grade before generate** - if the retrieved chunks do not contain the answer, the graph declines rather than falling back on general knowledge
+- **Citations** - the answer comes back with the chunks it used
+- **Models** - vLLM (`Qwen/Qwen3-32B` chat, `BAAI/bge-m3` embeddings) behind an OpenAI-compatible API
+- **Store** - Qdrant, optionally filtered to one `video_id`
+
+```
+docker compose -f docker-compose.ai.yml up
+```
+
+`POST /ingest` takes a YouTube URL, `POST /query` returns the answer plus
+citations, and `POST /query/stream` streams the graph. See [`ai/README.md`](ai/README.md).
