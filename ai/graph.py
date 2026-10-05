@@ -54,9 +54,7 @@ def grade_context(state: RagState) -> dict[str, Any]:
 
 def answer(state: RagState) -> dict[str, Any]:
     chunks = state.get("chunks", [])
-    numbered = "\n\n".join(
-        f"[{i + 1}] {c.get('text', '')}" for i, c in enumerate(chunks)
-    )
+    numbered = "\n\n".join(f"[{i + 1}] {c.get('text', '')}" for i, c in enumerate(chunks))
     prompt = (
         "Answer using only the numbered excerpts below and cite them as [n]. "
         "If they do not cover the question, say so plainly.\n\n"

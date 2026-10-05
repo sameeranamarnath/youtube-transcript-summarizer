@@ -2,7 +2,8 @@
 
 import json
 import re
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
@@ -11,6 +12,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 
 from core import chunk_text, get_settings, search, upsert_chunks
 from graph import APP, query
+from guardrails import sanitise
 
 api = FastAPI(title="youtube transcript rag", version="1.0.0")
 
@@ -78,7 +80,7 @@ def ingest(req: IngestRequest) -> IngestResponse:
 
 @api.post("/query")
 def query_endpoint(req: QueryRequest) -> dict[str, Any]:
-    result = query(req.question, req.video_id)
+    result = query(sanitise(req.question), req.video_id)
     return {
         "answer": result.get("answer", ""),
         "grounded": result.get("grounded", False),
@@ -92,7 +94,8 @@ async def query_stream(req: QueryRequest) -> StreamingResponse:
         state: dict[str, Any] = {"question": req.question, "video_id": req.video_id}
         for step in APP.stream(state):
             for node, update in step.items():
-                yield f"event: node\ndata: {json.dumps({'node': node, 'update': _safe(update)})}\n\n"
+                payload = json.dumps({"node": node, "update": _safe(update)})
+                yield f"event: node\ndata: {payload}\n\n"
                 state.update(update)
         yield f"event: done\ndata: {json.dumps(_safe(state))}\n\n"
 
